@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>性格診断（普段）</title>
+
+<style>
+body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; }
+
+.progress-container {
+  width: 100%;
+  background: #eee;
+  height: 8px;
+  border-radius: 4px;
+  margin: 20px 0;
+}
+.progress-bar {
+  height: 8px;
+  background: #4caf50;
+  width: 0%;
+  border-radius: 4px;
+  transition: width 0.3s;
+}
+
+.hidden { display: none; }
+.choice { padding: 10px; margin: 8px 0; background: #f0f0f0; cursor: pointer; border-radius: 6px; }
+.choice:hover { background: #e0e0e0; }
+.choice.selected { background: #c8e6c9; }
+</style>
+</head>
+
+<body>
+
+<h1>性格診断（普段）</h1>
+
+<div id="question-area">
+  <div class="progress-container">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+
+  <p id="question-text"></p>
+
+  <div id="answer-buttons"></div>
+  <button id="backBtn" class="hidden">戻る</button>
+
+  <button id="finishBtn" class="hidden">結果を見る</button>
+</div>
+
+<div id="result-area" class="hidden">
+  <h2 id="result-title"></h2>
+  <p id="result-one"></p>
+  <p id="result-tease"></p>
+
+  <button id="detailBtn">詳しく見る</button>
+
+  <div id="detailBox" class="hidden">
+    <p><strong>強み:</strong> <span id="result-strong"></span></p>
+    <p><strong>弱み:</strong> <span id="result-weak"></span></p>
+    <p><strong>説明:</strong> <span id="result-desc"></span></p>
+    <p id="result-stats"></p>
+  </div>
+
+  <button id="shareBtn">共有する</button>
+</div>
+
+<script>
+// ====== GAS URL ======
+const GAS_URL = "あなたのGASのURL";
+
+// ====== 質問データ ======
+const questions = [
+  { text: "予定のない休日、どう過ごしたい？",
+    choices: [
+      { text:"一人で自由に", score:{社交性:-2, 自立性:2} },
+      { text:"誰かと", score:{社交性:2, 自立性:-1} },
+      { text:"予定を作る", score:{社交性:1, 自立性:1} }
+    ]
+  },
+  { text:"何かを決めるとき、まずどうする？",
+    choices:[
+      { text:"自分で決める", score:{主体性:2, 協調性:-1} },
+      { text:"人に相談", score:{主体性:0, 協調性:1} },
+      { text:"周囲に合わせる", score:{主体性:-2, 協調性:2} }
+    ]
+  },
+  { text:"急に予定が変わったら？",
+    choices:[
+      { text:"楽しむ", score:{柔軟性:2} },
+      { text:"少し困る", score:{柔軟性:0} },
+      { text:"かなりストレス", score:{柔軟性:-2} }
+    ]
+  },
+  { text:"悩みがあるとき、どうする？",
+    choices:[
+      { text:"自分で考える", score:{自立性:2, 協調性:-1} },
+      { text:"誰かに話す", score:{自立性:0, 協調性:2} },
+      { text:"なるべく考えない", score:{自立性:-1, 自己表現:-1} }
+    ]
+  },
+  { text:"人から褒められたら？",
+    choices:[
+      { text:"素直に喜ぶ", score:{自己表現:2} },
+      { text:"照れる", score:{自己表現:1} },
+      { text:"反応に困る", score:{自己表現:-1} }
+    ]
+  },
+  { text:"自分と違う意見を聞いたら？",
+    choices:[
+      { text:"面白い", score:{柔軟性:2, 協調性:1} },
+      { text:"理由を聞く", score:{柔軟性:1, 協調性:2} },
+      { text:"納得できなければ伝える", score:{柔軟性:-1, 自己表現:2} }
+    ]
+  }
+];
+
+// ====== スコア初期値 ======
+let scores = {社交性:0, 自立性:0, 主体性:0, 協調性:0, 柔軟性:0, 自己表現:0};
+let current = 0;
+
+// ====== 進捗バー ======
+function updateProgress() {
+  const percent = (current / questions.length) * 100;
+  document.getElementById("progressBar").style.width = percent + "%";
+}
+
+// ====== 質問表示 ======
+function renderQuestion() {
+  const q = questions[current];
+  document.getElementById("question-text").textContent = q.text;
+
+  const btns = document.getElementById("answer-buttons");
+  btns.innerHTML = "";
+
+  q.choices.forEach((c, i) => {
+    const b = document.createElement("div");
+    b.className = "choice";
+    b.textContent = c.text;
+    b.onclick = () => selectChoice(i);
+    btns.appendChild(b);
+  });
+
+  document.getElementById("backBtn").classList.toggle("hidden", current === 0);
+
+  const finishBtn = document.getElementById("finishBtn");
+  finishBtn.classList.toggle("hidden", current !== questions.length - 1);
+
+  if (current === questions.length - 1) finishBtn.disabled = true;
+
+  updateProgress();
+}
+
+// ====== 回答処理 ======
+function selectChoice(i) {
+  const sc = questions[current].choices[i].score;
+
+  if (current === questions.length - 1) {
+    const btns = document.querySelectorAll("#answer-buttons .choice");
+    btns.forEach(b => b.classList.remove("selected"));
+    btns[i].classList.add("selected");
+
+    document.getElementById("finishBtn").disabled = false;
+
+    for (let k in sc) scores[k] += sc[k];
+    return;
+  }
+
+  for (let k in sc) scores[k] += sc[k];
+
+  current++;
+  renderQuestion();
+}
+
+// ====== 戻る ======
+document.getElementById("backBtn").onclick = () => {
+  if (current > 0) {
+    current--;
+    renderQuestion();
+  }
+};
+
+// ====== 64タイプ → 8タイプ集約 ======
+const groups = [
+  { name:"静かなマイペース型", ids:[1,5,17,19,21,23,33,49],
+    one:"自分の速度で生きる人",
+    tease:"急かされると処理落ちするタイプ",
+    strong:"無理に群れず自分のペースを守るブレなさ。周りに流されず安定感抜群。",
+    weak:"前に出る気が一切なく省エネ。関わるとすぐ疲れ「何考えてるか不明」と言われがち。",
+    desc:"人との関わりを嫌うわけではないものの、自分のペースや一人の時間をかなり大切にするタイプ。無理に前へ出ず、居心地のいい距離感を保ちながら自然体で過ごす。"
+  },
+  { name:"ひっそり愛され型", ids:[2,4,6,8,18,22,34,50],
+    one:"静かに好かれる人",
+    tease:"気づいたら囲まれてて困惑するタイプ",
+    strong:"控えめに見えて実は愛嬌の塊。安心すると一気に喋り、ちゃっかり懐に入る天才。",
+    weak:"慣れると急に饒舌でギャップ大。「最初は大人しかったのに…」と驚かれボロが出る。",
+    desc:"控えめに見えても、親しくなると個性や表現力が顔を出すタイプ。自分から強く押さなくても、人との距離を縮めるのがうまく、じわじわ存在感を残す。"
+  },
+  { name:"静かな芯持ち型", ids:[9,10,13,14,15,16,25,29],
+    one:"黙って自分を持つ人",
+    tease:"静かだけど譲らない時だけ急に強いタイプ",
+    strong:"表には出さずとも心で答えは決定済み。裏から調整して全体を動かす隠れフィクサー。",
+    weak:"黙って勝手に決めるので「頑固」「裏で仕切ってる」と警戒され面倒な裏番長化する。",
+    desc:"表面的には穏やかでも、内側には自分なりの考えや判断基準を持っているタイプ。周囲を尊重しながらも、重要なところでは自分の意思を曲げにくい。"
+  },
+  { name:"自由な独立型", ids:[11,20,26,27,28,31,32,59],
+    one:"自分ルールで進む人",
+    tease:"自由に見えて実はこだわり強すぎるタイプ",
+    strong:"強い意思を持ちつつ超高速で前言撤回＆修正できる、爆走系自分ルール開発者。",
+    weak:"こだわりと気まぐれで周りを置き去り。「昨日の発言と違う」と言われても開き直る。",
+    desc:"他人の正解より自分なりの納得を重視するタイプ。環境が変わっても考え直す柔軟さがあり、誰かに合わせるより自分で方向を決めて進みたい。"
+  },
+  { name:"調和する適応型", ids:[3,7,30,37,39,40,53,55],
+    one:"空気と流れを操る人",
+    tease:"丸く収めすぎて自分の意見どこ行ったタイプ",
+    strong:"誰とでも心地よい距離感を保つプロ。風向きに乗るしなやかさで場を丸く収める。",
+    weak:"波風を避けすぎて「お任せで」連発。合わせすぎて「本音が見えない」と思われる。",
+    desc:"周囲との関係を大切にしながら、その場に合わせて動けるタイプ。強く主張するより状況を見て最適な立ち位置を選び、場をスムーズに進めるのが得意。"
+  },
+  { name:"社交的な自由人型", ids:[35,36,38,51,52,54,56,60],
+    one:"人も自由も楽しむ人",
+    tease:"楽しそうなら予定を秒で裏切るタイプ",
+    strong:"圧倒的なノリと行動力でどこでも即主人公。変化を楽しみ人生を楽しむ天才。",
+    weak:"計画性が壊滅的。「ノリと面白さ優先」で引き受けた約束を忘れて爆死しがち。",
+    desc:"人と過ごすことも一人の時間も楽しめるタイプ。細かく縛られることを好まず、面白そうな方向へ軽やかに動きながら、自分らしい楽しみ方を見つける。"
+  },
+  { name:"行動するリーダー型", ids:[41,42,43,44,45,46,47,48],
+    one:"動いて流れを作る人",
+    tease:"勢いで始めて後から調整しがちなタイプ",
+    strong:"前に出るエネルギーと行動力で引っぱる主役体質。周りを巻き込んで爆進。",
+    weak:"早すぎて周囲を置いてきぼりに。「嫌われたくない」と言いつつ圧で周りを削る。",
+    desc:"自分から動くことに抵抗がなく、人を巻き込みながら前へ進めるタイプ。勢いだけでなく周囲の反応も見ながら、その場に合わせて方向を調整できる。"
+  },
+  { name:"万能バランス型", ids:[12,24,57,58,61,62,63,64],
+    one:"自分も周りも捨てない人",
+    tease:"器用すぎて逆に本音どこか分かりにくいタイプ",
+    strong:"社交性・芯の強さ・柔軟性を兼ね備えたチート級。どこでも生き残れる完成形。",
+    weak:"完璧すぎて隙がない。自分を失わない頑固さを隠し持っており、怒ると一番怖い。",
+    desc:"自分の意思を持ちながら、人との関係や状況の変化にも対応できるタイプ。自立と社交、自己表現と配慮を状況に応じて使い分け、環境に合わせて自然に立ち回る。"
+  }
+];
+
+// ====== 結果を見る ======
+document.getElementById("finishBtn").onclick = () => finish();
+
+function finish() {
+  document.getElementById("question-area").classList.add("hidden");
+  document.getElementById("result-area").classList.remove("hidden");
+
+  const keys = ["社交性","自立性","主体性","協調性","柔軟性","自己表現"];
+
+  // 中央値判定
+  let bits = keys.map(k => scores[k] >= 0 ? 1 : 0);
+  let id = parseInt(bits.join(""), 2) + 1;
+
+  let group = groups.find(g => g.ids.includes(id));
+
+  document.getElementById("result-title").textContent = group.name;
+  document.getElementById("result-one").textContent = group.one;
+  document.getElementById("result-tease").textContent = group.tease;
+  document.getElementById("result-strong").textContent = group.strong;
+  document.getElementById("result-weak").textContent = group.weak;
+  document.getElementById("result-desc").textContent = group.desc;
+
+  fetch(GAS_URL, {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({ typeId:id, resultCode:bits.join("") })
+  })
+  .then(res => res.json())
+  .then(data => {
+    document.getElementById("result-stats").textContent =
+      `同じタイプの人は計 ${data.sameTypeCount} 人いました。回答者は累計 ${data.totalRespondents} 人です。`;
+  });
+}
+
+// ====== 詳しく見る ======
+document.getElementById("detailBtn").onclick = () => {
+  document.getElementById("detailBox").classList.toggle("hidden");
+};
+
+// ====== 共有 ======
+document.getElementById("shareBtn").onclick = () => {
+  if (navigator.share) {
+    navigator.share({
+      title:"性格診断（普段）",
+      text:"診断結果を共有します！",
+      url:location.href
+    });
+  } else {
+    alert("共有機能が使えません");
+  }
+};
+
+renderQuestion();
+</script>
+
+</body>
+</html>

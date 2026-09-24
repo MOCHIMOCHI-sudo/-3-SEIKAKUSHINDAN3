@@ -75,8 +75,8 @@ body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; }
 </div>
 
 <script>
-// ====== GAS URL（正しい WebアプリURL） ======
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxmlpIbMA3ffsN3_yctWEI6KZKNNqCbInDOku-MV4DLnKMzVjOOI9Fb0q87w84eHWvMEA/exec";
+// ====== GAS URL（最新の WebアプリURL） ======
+const GAS_URL = "https://script.google.com/macros/s/AKfycbw05J6HoKc07QqSqhHZ_8u7i4tWGnf_Ca1hzLVD04ruHBCw7BK75m_YyPhZsGjEpzQI1g/exec";
 
 // ====== 質問データ ======
 const questions = [
@@ -300,5 +300,13 @@ document.getElementById("shareBtn").onclick = () => {
       url:location.href
     });
   } else {
+    alert("このブラウザでは共有機能が使えません。");
+  }
+};
+
 // ページ読み込み時に最初の質問を表示
 renderQuestion();
+</script>
+
+</body>
+</html>

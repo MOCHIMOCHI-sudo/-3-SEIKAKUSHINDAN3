@@ -26,6 +26,14 @@ body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; }
 .choice { padding: 10px; margin: 8px 0; background: #f0f0f0; cursor: pointer; border-radius: 6px; }
 .choice:hover { background: #e0e0e0; }
 .choice.selected { background: #c8e6c9; }
+
+#result-descTop {
+  margin-top: 10px;
+  padding: 10px;
+  background: #fafafa;
+  border-left: 4px solid #4caf50;
+  border-radius: 6px;
+}
 </style>
 </head>
 
@@ -51,6 +59,9 @@ body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; }
   <p id="result-one"></p>
   <p id="result-tease"></p>
 
+  <!-- ★ 8キャラの説明文（上部に追加） -->
+  <div id="result-descTop"></div>
+
   <button id="detailBtn">詳しく見る</button>
 
   <div id="detailBox" class="hidden">
@@ -65,7 +76,7 @@ body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; }
 
 <script>
 // ====== GAS URL ======
-const GAS_URL = "あなたのGASのURL";
+const GAS_URL = "★あなたのWebアプリURL（編集画面URLではない）";
 
 // ====== 質問データ ======
 const questions = [
@@ -178,7 +189,7 @@ document.getElementById("backBtn").onclick = () => {
   }
 };
 
-// ====== 64タイプ → 8タイプ集約 ======
+// ====== 8タイプ集約 ======
 const groups = [
   { name:"静かなマイペース型", ids:[1,5,17,19,21,23,33,49],
     one:"自分の速度で生きる人",
@@ -247,7 +258,6 @@ function finish() {
 
   const keys = ["社交性","自立性","主体性","協調性","柔軟性","自己表現"];
 
-  // 中央値判定
   let bits = keys.map(k => scores[k] >= 0 ? 1 : 0);
   let id = parseInt(bits.join(""), 2) + 1;
 
@@ -256,6 +266,10 @@ function finish() {
   document.getElementById("result-title").textContent = group.name;
   document.getElementById("result-one").textContent = group.one;
   document.getElementById("result-tease").textContent = group.tease;
+
+  // ★ 8キャラ説明（上部に追加）
+  document.getElementById("result-descTop").textContent = group.desc;
+
   document.getElementById("result-strong").textContent = group.strong;
   document.getElementById("result-weak").textContent = group.weak;
   document.getElementById("result-desc").textContent = group.desc;

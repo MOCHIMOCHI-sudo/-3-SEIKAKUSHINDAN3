@@ -59,7 +59,7 @@ body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; }
   <p id="result-one"></p>
   <p id="result-tease"></p>
 
-  <!-- ★ 8キャラの説明文（上部に追加） -->
+  <!-- 8タイプの説明文（上部に表示） -->
   <div id="result-descTop"></div>
 
   <button id="detailBtn">詳しく見る</button>
@@ -75,9 +75,8 @@ body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; }
 </div>
 
 <script>
-// ====== GAS URL ======
+// ====== GAS URL（正しい WebアプリURL） ======
 const GAS_URL = "https://script.google.com/macros/s/AKfycbzKPWO_IxlFPwGHWX6T1sMyy1dJhO5qKSSnk-vYa4XUkFX03jn0Gu5EXgfq0nymzHNOzg/exec";
-";
 
 // ====== 質問データ ======
 const questions = [
@@ -268,7 +267,7 @@ function finish() {
   document.getElementById("result-one").textContent = group.one;
   document.getElementById("result-tease").textContent = group.tease;
 
-  // ★ 8キャラ説明（上部に追加）
+  // 8タイプ説明（上部）
   document.getElementById("result-descTop").textContent = group.desc;
 
   document.getElementById("result-strong").textContent = group.strong;
@@ -301,12 +300,3 @@ document.getElementById("shareBtn").onclick = () => {
       url:location.href
     });
   } else {
-    alert("共有機能が使えません");
-  }
-};
-
-renderQuestion();
-</script>
-
-</body>
-</html>
